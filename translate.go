@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -64,7 +63,7 @@ func (tr *YandexTranslator) getNewAPIKey() string {
 		"Invoke-RestMethod", "-Method", "'POST'", "-Uri", "'https://iam.api.cloud.yandex.net/iam/v1/tokens'", "-Body", "$Body",
 		"-ContentType", "'Application/json'|Select-Object", "-ExpandProperty", "iamToken").Output()
 	if err != nil {
-		log.Fatal(trace(), ": ", err)
+		//log.Fatal(trace(), ": ", err)
 	}
 	return string(cmd[:len(cmd)-2])
 }
@@ -88,27 +87,27 @@ func (tr *YandexTranslator) TranslateByYandex(language string, text string) (str
 	r.Header.Add("Authorization", "Bearer "+tr.getAPIKey())
 	resp, err := client.Do(r)
 	if err != nil {
-		log.Println(trace(), ": ", err)
+		//log.Println(trace(), ": ", err)
 		return "", err
 	}
 	///
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Println(trace(), ": ", err)
+			//log.Println(trace(), ": ", err)
 		}
 	}(resp.Body)
 	///
 	translations := make([]byte, resp.ContentLength)
-	n, err := resp.Body.Read(translations)
+	_, err = resp.Body.Read(translations)
 	if err != nil {
-		log.Println(trace(), ": ", n, err)
+		//	log.Println(trace(), ": ", n, err)
 		return "", err
 	}
 	translation := outputTranslations{}
 	err = json.Unmarshal(translations, &translation)
 	if err != nil {
-		log.Println(trace(), ": ", n, err)
+		//	log.Println(trace(), ": ", n, err)
 		return "", err
 	}
 	var result string
