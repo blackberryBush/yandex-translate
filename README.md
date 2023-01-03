@@ -1,6 +1,8 @@
 # yandex-translate
 Go Yandex Translate API for RESTv2 (see the new documentation in Yandex Cloud)
 
+Documentation: https://cloud.yandex.com/en/docs/translate/
+
 Usage:
 
 ```
