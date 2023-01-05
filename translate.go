@@ -1,4 +1,4 @@
-package yandex_translate
+package main
 
 import (
 	"encoding/json"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -48,6 +47,11 @@ type outputText struct {
 	Language string `json:"detectedLanguageCode"`
 }
 
+type token struct {
+	IamToken  string    `json:"iamToken"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
 func newInputText(targetLanguageCode string, texts string, folderID string) *inputText {
 	return &inputText{TargetLanguageCode: targetLanguageCode, Texts: texts, FolderID: folderID}
 }
@@ -59,14 +63,28 @@ func trace() string {
 	return f.Name()
 }
 func (tr *YandexTranslator) getNewAPIKey() string {
-	cmd, err := exec.Command("powershell", "$yandexPassportOauthToken=\""+tr.oauthKey+"\"\n",
-		"$Body=@{yandexPassportOauthToken=\"$yandexPassportOauthToken\"}|ConvertTo-Json", "-Compress\n",
-		"Invoke-RestMethod", "-Method", "'POST'", "-Uri", "'https://iam.api.cloud.yandex.net/iam/v1/tokens'", "-Body", "$Body",
-		"-ContentType", "'Application/json'|Select-Object", "-ExpandProperty", "iamToken").Output()
+	body := "{\"yandexPassportOauthToken\":\"" + tr.oauthKey + "\"}"
+	req, err := http.NewRequest("POST", "https://iam.api.cloud.yandex.net/iam/v1/tokens", strings.NewReader(body))
 	if err != nil {
 		return ""
 	}
-	return string(cmd[:len(cmd)-2])
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body1 := make([]byte, resp.ContentLength)
+	_, err = resp.Body.Read(body1)
+	if err != nil {
+		return ""
+	}
+	v := token{}
+	err = json.Unmarshal(body1, &v)
+	if err != nil {
+		return ""
+	}
+	return v.IamToken
 }
 
 func (tr *YandexTranslator) getAPIKey() string {
