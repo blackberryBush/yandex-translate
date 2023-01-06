@@ -1,4 +1,4 @@
-package yandex_translate
+package ytranslate
 
 import (
 	"encoding/json"
